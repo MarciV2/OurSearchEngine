@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.0
+-- version 5.1.1
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Erstellungszeit: 08. Jun 2022 um 11:13
--- Server-Version: 10.4.24-MariaDB
--- PHP-Version: 8.1.6
+-- Erstellungszeit: 15. Jun 2022 um 15:28
+-- Server-Version: 10.4.22-MariaDB
+-- PHP-Version: 8.1.1
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -30,6 +30,7 @@ SET time_zone = "+00:00";
 CREATE TABLE `links` (
   `id` int(11) NOT NULL,
   `link` varchar(1024) NOT NULL,
+  `title` text NOT NULL,
   `timestamp_visited` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -37,8 +38,10 @@ CREATE TABLE `links` (
 -- Daten für Tabelle `links`
 --
 
-INSERT INTO `links` (`id`, `link`, `timestamp_visited`) VALUES
-(1, 'https://www.heidenheim.dhbw.de/startseite', '0000-00-00 00:00:00');
+INSERT INTO `links` (`id`, `link`, `title`, `timestamp_visited`) VALUES
+(1, 'https://www.heidenheim.dhbw.de/startseite', 'Hochschule in Ostwürttemberg | DHBW Heidenheim', '2022-06-08 10:10:10'),
+(2, 'https://www.google.de', '', '0000-00-00 00:00:00'),
+(3, 'https://www.amazon.de', '', '2022-06-08 09:30:14');
 
 -- --------------------------------------------------------
 
@@ -71,7 +74,8 @@ CREATE TABLE `wordlinks` (
 -- Indizes für die Tabelle `links`
 --
 ALTER TABLE `links`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `link` (`link`);
 
 --
 -- Indizes für die Tabelle `word`
@@ -93,7 +97,7 @@ ALTER TABLE `wordlinks`
 -- AUTO_INCREMENT für Tabelle `links`
 --
 ALTER TABLE `links`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT für Tabelle `word`
