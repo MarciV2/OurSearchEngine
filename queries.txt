@@ -1,0 +1,13 @@
+#### Abfrage von Wordlinks: Wort;LinkID;Link
+SELECT word.word,links.id,links.link
+FROM wordlinks, word,links
+WHERE wordlinks.id_word=word.id 
+AND wordlinks.id_link=links.id
+
+
+#### Abfrage der am häufigsten verwendeten Wörtern
+SELECT word.word AS Wort, COUNT(*) AS Anzahl 
+FROM wordlinks, word 
+WHERE wordlinks.id_word=word.id 
+GROUP BY wordlinks.id_word 
+ORDER BY Anzahl DESC

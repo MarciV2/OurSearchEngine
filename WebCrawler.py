@@ -73,15 +73,20 @@ def getStartSite():
 def writeLinkToDB(url, title):
     cnx = mysql.connector.connect(**DBconfig)
     mycursor=cnx.cursor()
-    query="""INSERT INTO links(link, title, timestamp_visited)
+    queryInsLink="""INSERT INTO links(link, title, timestamp_visited)
                     VALUES( "{}", "{}",NOW())
                     ON DUPLICATE KEY
                     UPDATE title = "{}", timestamp_visited = NOW();""".format(url, title,title)
+    queryGetId="""SELECT id FROM links WHERE link="{}" """.format(url)
     #print(query)
-    mycursor.execute(query)
+    mycursor.execute(queryInsLink)
+    mycursor.execute(queryGetId)
+    linkId=mycursor.fetchone()[0]
+
     cnx.commit()
     
     cnx.close()
+    return linkId
 
     ### Prüft, ob URL in DB vorhanden ist, wenn ja, returned False
 def checkIfShouldCrawl(url):
@@ -98,36 +103,52 @@ def checkIfShouldCrawl(url):
     else: return False
 
 def writeAllWords(words,siteId):
-    wordData=[]
-
+    cnx = mysql.connector.connect(**DBconfig)
+    mycursor=cnx.cursor(buffered=True)
+    queryInsWord="""INSERT INTO word (word) VALUES ("{}") ON DUPLICATE KEY UPDATE id=id """
+    queryGetWId="""SELECT word.id FROM word WHERE word.word="{}" """
+    queryInsWL="""INSERT INTO wordlinks(id_word,id_link) VALUES("{}","{}") ON DUPLICATE KEY UPDATE id=id"""
     for word in words:
-        wordData.append((word,startSite[0]))
+        mycursor.execute(queryInsWord.format(word))
+        mycursor.execute(queryGetWId.format(word))
+        wordId=mycursor.fetchone()[0]
+        mycursor.execute(queryInsWL.format(wordId,siteId))
+        cnx.commit()
+    cnx.close()
+
 
     ### Crawled den angegebenen Link, die Tiefe dient zur limitierung
-def crawlLink(startSite,currentDepth):
+def crawlLink(startLink,currentDepth):
     global maxDepth
-    startLink=startSite[1]
     print("Now crawling: {}".format(startLink))
     title=""
     allLinks=[]
     allImages=[]
     allWords=[]
-    content = get_url_content(startLink)
     
-    # übergebe html an beautifulsoup parser
-    soup = BeautifulSoup(content, "html.parser")
     
     try:
+        content = get_url_content(startLink)
+    
+        # übergebe html an beautifulsoup parser
+        soup = BeautifulSoup(content, "html.parser")
+
         allLinks=getAllLinks(soup)
         allImages=getAllImages(soup)
         allWords=getAllWords(soup)
         title=getTitle(soup)
     except:
         print("An error occurred!")
+        return False
 
-    writeLinkToDB(startLink,title)
+    linkId=writeLinkToDB(startLink,title)
 
-    writeAllWords(allWords,startSite[0])
+    ##In Lowercase konvertieren
+    allWords=[w.lower() for w in allWords]
+
+    print("Inserting {} words".format(len(allWords)))
+
+    writeAllWords(allWords,linkId)
     
 
 
@@ -143,7 +164,7 @@ def crawlLink(startSite,currentDepth):
                 link=result+link
 
             else:
-                if link.startswith("http"):
+                if link.startswith("http") or link.startswith("#"):
                     continue
                 parsed_uri=urlparse(startLink)
                 result = '{uri.scheme}://{uri.netloc}{uri.path}'.format(uri=parsed_uri)
@@ -161,8 +182,8 @@ def crawlLink(startSite,currentDepth):
 startSite=getStartSite()
 if(startSite!=None):
     depth=0
-    startURL=startSite[1]
-    crawlLink(startSite,0)
+    startLink=startSite[1]
+    crawlLink(startLink,0)
 
            
 
