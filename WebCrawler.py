@@ -53,6 +53,28 @@ def getAllWords(soup):
     return words
 
 
+def getAllWords2(soup):
+    wordlist=[]
+    for each_text in soup.findAll("div"):
+        if each_text is not None: 
+            words=[]
+            content = each_text.text
+            words = content.lower().split()
+            for each_word in words:
+                wordlist.append(each_word)
+    
+    
+    return clean_wordlist(wordlist)
+
+def clean_wordlist(wordlist):
+    clean_list = []
+    for word in wordlist:
+        symbols = "!@#$%^&*()_-+={[}]|\;:\"<>?/., '"
+        for i in range(len(symbols)):
+            word = word.replace(symbols[i], "")
+        if len(word) > 0:
+            clean_list.append(word)
+    return clean_list
 
 
 ## Holt Seite von der DB, welche am längsten nicht gecrawled wurde
@@ -107,7 +129,7 @@ def writeAllWords(words,siteId):
     mycursor=cnx.cursor(buffered=True)
     queryInsWord="""INSERT INTO word (word) VALUES ("{}") ON DUPLICATE KEY UPDATE id=id """
     queryGetWId="""SELECT word.id FROM word WHERE word.word="{}" """
-    queryInsWL="""INSERT INTO wordlinks(id_word,id_link) VALUES("{}","{}") ON DUPLICATE KEY UPDATE id=id"""
+    queryInsWL="""INSERT INTO wordlinks(id_word,id_link) VALUES("{}","{}") ON DUPLICATE KEY UPDATE id=id """
     for word in words:
         mycursor.execute(queryInsWord.format(word))
         mycursor.execute(queryGetWId.format(word))
@@ -130,12 +152,12 @@ def crawlLink(startLink,currentDepth):
     try:
         content = get_url_content(startLink)
     
-        # übergebe html an beautifulsoup parser
+            # übergebe html an beautifulsoup parser
         soup = BeautifulSoup(content, "html.parser")
 
         allLinks=getAllLinks(soup)
         allImages=getAllImages(soup)
-        allWords=getAllWords(soup)
+        allWords=getAllWords2(soup)
         title=getTitle(soup)
     except:
         print("An error occurred!")
