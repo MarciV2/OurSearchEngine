@@ -1,12 +1,13 @@
 <?php
-    
+
+    //Supress Warnings/errors If you can not see them they do not exist
     error_reporting(0);
    
     if (isset($_GET['search'])) {
         $search = $_GET['search'];
     } else {
         $search = "";
-        echo "Search phrase missing...";
+        echo "Search phrase is missing";
     }
 ?>
 
@@ -22,12 +23,11 @@
         
         <form action="add_url.php" method="get"> 
              <p>DHBW Add URL to Database: <input type="text" name="url" /></p>
-             <p> (<b>HINT:</b> USE 'http' or 'https' like, <b>http://www.xyz.de</b>)</p>
 			 <p><input type="submit" value="Link hinzufügen"</p>
         </form>
 
         <hr>
-        <!-- method = get? => argument is visible in URL -->
+        
         <form action="index.php" method="get" style="text-align: center;"> 
             <p>DHBW Search</p>
             <p> <input type="text" name="search" /></p>
@@ -39,20 +39,13 @@
         
         <?php
         
-            // Config
-            //$cfg_limit_found_words = 100;
-            //$cfg_limit_found_links_per_words = 100;
-        
-            // Include some connection info...
-            //$credentials_file = "C:/CC/xampp-outside-webroot/db_settings.php";    
-            //include $credentials_file;
-            $mysqli = new mysqli("127.0.0.1", "root", "", 'searchengine');
-            
            
             
             
+           
             if ($search != "") 
 			{
+				$mysqli = new mysqli("127.0.0.1", "root", "", 'searchengine');
                 $sql = "SELECT * FROM word WHERE word LIKE '%$search%' LIMIT 200;"; //Restrict ammount of results from the database
                 if ($result = $mysqli->query($sql)) 
 				{
@@ -62,10 +55,10 @@
                     $item_count = 0;
                     while ($word_var = $result->fetch_assoc()) {
                        
-					   
+						//Found word with id within the loop 
                         echo "<li> " . $word_var['word']."  has ID: ". $word_var['id'] . "\n";
                         
-                        
+                        //Wordlink for the given id
                         $sql="SELECT * FROM wordlinks WHERE id_word = '" . $word_var['id'] . "'  LIMIT 200;"; //Restrict ammount of results from the database
 						
                         if ($result2 = $mysqli->query($sql)) 
@@ -78,7 +71,7 @@
 								
                                 echo "<li>\n";
 								
-                              
+								//Get the link from the found id_link
                                 $sql = "SELECT * FROM links WHERE id = '".$wordlink_var["id_link"]."';";
 								
                                 if ($result3 = $mysqli->query($sql)) 
@@ -86,7 +79,8 @@
                                     
                                     $link_var = $result3->fetch_assoc();
                                     $item_count++;
-									//Output of the found site
+									
+									//Output of the Link and its id
 									echo "$item_count. Wordlink found, the id is: " . $link_var["id"] . " - <a href='" . $link_var["link"] . "'>" . $link_var["link"] . "</a>\n";								
                                     
 									
@@ -94,14 +88,17 @@
                                 echo "</li>\n";
                             }
                             echo "</ul>\n";
+							
                         }
                         
                         echo "</li>\n";
                     }
                     echo "</ul>\n";
 
-                    // Free the resources...
+                    
                     $result->free();
+					$result2->free();
+					$result3->free();
                     $mysqli->close();
                 }
             } 

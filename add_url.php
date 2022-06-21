@@ -6,7 +6,7 @@
         $url = $_GET['url'];
     } else {
         $url = "";
-        echo "'url' argument phrase missing...";
+        echo "'url' argument phrase missing";
     }
 
 		
@@ -28,12 +28,12 @@
 	$sql = "SELECT * from links WHERE link = '$url';";
 	
 	//Already in Database?
-	if ($result_r = $mysqli->query($sql)) 
+	if ($result = $mysqli->query($sql)) 
 	{
 				
-		if ($result_r->num_rows > 0) 
+		if ($result->num_rows > 0) 
 		{
-			
+			//Only Output a message if link is already in the Database
 			echo("Link is already in database");
 			
 		}
@@ -42,7 +42,7 @@
 		// Insert new link
 		$sql = "INSERT INTO links (link, timestamp_visited) VALUES ('$url','0000-00-00 00:00:00');";
 		echo $sql . "<br>";
-			if ($result = $mysqli->query($sql)) 
+			if ($result2 = $mysqli->query($sql)) 
 			{
 				echo("Link inserted into database");
 						
@@ -52,12 +52,14 @@
 				echo("Database error");
 			}            
 		}
-		$result_r->close();
+		$result->free();
+		$result2->free();
 	}   
 		  
 	$mysqli->close(); 
 	}
 ?>
+
 <!DOCTYPE html>
 <html lang="de">
     <head>
@@ -70,7 +72,6 @@
         
         <form action="add_url.php" method="get"> 
              <p>DHBW Add URL to Database: <input type="text" name="url" /></p>
-             <p> (<b>HINT:</b> USE 'http' or 'https' like, <b>http://www.xyz.de</b>)</p>
 			 <p><input type="submit" value="Link hinzufügen"</p>
         </form>
 		<form action="index.php" method="post"> 
