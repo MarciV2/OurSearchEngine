@@ -1,21 +1,30 @@
-#### Abfrage von Wordlinks: Wort;LinkID;Link
-SELECT word.word,links.id,links.link
-FROM wordlinks, word,links
-WHERE wordlinks.id_word=word.id 
+ï»¿#### Abfrage von Wordlinks: Wort;LinkID;Link
+SELECT words.word,links.id,links.link
+FROM wordlinks, words,links
+WHERE wordlinks.id_word=words.id 
 AND wordlinks.id_link=links.id
 
 
-#### Abfrage der am häufigsten verwendeten Wörtern
-SELECT word.word AS Wort, COUNT(*) AS Anzahl 
-FROM wordlinks, word 
-WHERE wordlinks.id_word=word.id 
+#### Abfrage der am hÃ¤ufigsten verwendeten WÃ¶rtern
+SELECT words.word AS Wort, COUNT(*) AS Anzahl 
+FROM wordlinks, words 
+WHERE wordlinks.id_word=words.id 
 GROUP BY wordlinks.id_word 
 ORDER BY Anzahl DESC
 
 
-#### Sucht die längsten Worte in der DB zusammen mit der website, auf der es vorkommt
-SELECT LENGTH(word.word) AS Length, word.word ,links.link
-FROM word, wordlinks, links
-WHERE word.id=wordlinks.id_word AND
+#### Sucht die lÃ¤ngsten Worte in der DB zusammen mit der website, auf der es vorkommt
+SELECT LENGTH(words.word) AS Length, words.word ,links.link
+FROM words, wordlinks, links
+WHERE words.id=wordlinks.id_word AND
 	links.id=wordlinks.id_link
+GROUP BY words.word
 ORDER BY Length DESC
+
+
+#### Ausgabe aller wordlinks mit zeichen
+SELECT words.word,links.link 
+FROM words, links, wordlinks 
+WHERE words.id=wordlinks.id_word AND 
+	wordlinks.id_link=links.id 
+	AND words.word LIKE "%â–º%"

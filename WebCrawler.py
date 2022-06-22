@@ -45,44 +45,75 @@ def getAllImages(soup):
 def getTitle(soup):    
     return soup.title.text
 
-## Alle Wörter der Seite zurückgeben, anhand von RegEx, wird jedoch nicht gefiltert!!!
+regexTel= "[\+0][0-9 .()-]+"
+
+regexURL = re.compile(r"(\w+:\/\/)?(\w+\.)?(([a-zA-Z]+\w*)\.(\w+))(\.\w+)*([\w\-\._\~\/]*)*(?<!\.)[^.]")
+
+## Wörter der Seite extrahieren, filtert auch Telefonnummern, E-Mails&URLs
 def getAllWords(soup):
-    str=soup.text.replace("\n"," ").replace("\xa0"," ")
-    words=re.findall("[a-zA-Z0-9äöüÄÖÜß][a-zA-Z0-9äöüÄÖÜß\-\_]*[a-zA-Z0-9äöüÄÖÜß]",str)
-
-    return words
-
-## Alternative Methode um Wörter der Seite zu finden
-def getAllWords2(soup):
     wordset={""}
+    telNrs={""}
     for each_text in soup.findAll("p"):
         if each_text is not None: 
             words=[]
+
+          
             content = each_text.text
+
+             ## Telefonnummern vorfiltern
+            numbers=re.findall(regexTel,content)
+            if numbers: 
+               for n in numbers: content=content.replace(n," ")
+               n=n.replace(" ","")
+               telNrs.add(n)
+
             words = content.lower().split()
 
             for word in words:
-                if validators.url(word):
-                    words.remove(word)
-
+                ## - am Anfang des wortes entfernen
+                if word.startswith("-"):
+                    word=word[1:]
+                ## - am Ende des Wortes entfernen
+                if word.endswith("-"):
+                    word=word[:-1]
+                ##  E-Mail-Adressen entfernen
+                if(re.search(r"[\w\.\+\-]+\@[\w-]+(?:.[\w-])*\.[a-z]{2,3}", word)):
+                        print("email found: {}".format(word))
+                        words.remove(word)
+                        continue
+                ## URLs entfernen
+                if regexURL.match(word) is not None:
+                    print("url erkannt: "+word)
+                    while word in words: words.remove(word)
+                    continue
+                
+                if word.find("www")!=-1 or word.find("49")!=-1:
+                    print("www!!")
        
             wordset.update(words)
 
-    #Stoppwörter löschen (mit Messung&Ausgabe der Anzahl)
+    wordset=removeStopWords(wordset)
+
+    
+
+    cleanWordlist=clean_wordlist(list(wordset))
+    telNrs.remove("")
+    if len(telNrs)>=0: cleanWordlist.extend(list(telNrs))
+    return cleanWordlist
+
+ ##Stoppwörter löschen (mit Messung&Ausgabe der Anzahl)
+def removeStopWords(wordset):
     len1=len(wordset)
     wordset=wordset-set(stopwords)
     len2=len1-len(wordset)
     print("removed {} stopwords".format(len2))
-
-    return clean_wordlist(list(wordset))
-
-
+    return wordset
 
 ## Reinigt die Liste von Sonderzeichen
 def clean_wordlist(wordlist):
     clean_list = []
     for word in wordlist:
-        symbols = "!@#$%^&*()_+={[}]|\;:\"<>?/., '\"©"
+        symbols = "!@#$%^&*()_+={[}]|\;:\"<>?/., '\"©►“„…´​​​​​​"
         for i in range(len(symbols)):
             word = word.replace(symbols[i], "")
         if len(word) > 0:
@@ -142,8 +173,8 @@ def checkIfShouldCrawl(url):
 def writeAllWords(words,siteId):
     cnx = mysql.connector.connect(**DBconfig)
     mycursor=cnx.cursor(buffered=True)
-    queryInsWord="""INSERT INTO word (word) VALUES ("{}") ON DUPLICATE KEY UPDATE id=id """
-    queryGetWId="""SELECT word.id FROM word WHERE word.word="{}" """
+    queryInsWord="""INSERT INTO words (word) VALUES ("{}") ON DUPLICATE KEY UPDATE id=id """
+    queryGetWId="""SELECT words.id FROM words WHERE words.word="{}" """
     queryInsWL="""INSERT INTO wordlinks(id_word,id_link) VALUES("{}","{}") ON DUPLICATE KEY UPDATE id=id """
     for word in words:
         mycursor.execute(queryInsWord.format(word))
@@ -172,7 +203,7 @@ def crawlLink(startLink,currentDepth):
 
         allLinks=getAllLinks(soup)
         #allImages=getAllImages(soup)
-        allWords=getAllWords2(soup)
+        allWords=getAllWords(soup)
         title=getTitle(soup)
     except:
         # Fehler wie fehlender Titel,... werden abgefange
@@ -194,9 +225,9 @@ def crawlLink(startLink,currentDepth):
 
         for link in allLinks:
 
-            if link.find(".css")!=-1 or link.find(".pdf")!=-1:
-                continue   
-
+            if link.find(".css")!=-1 or link.find(".pdf")!=-1 or link.find(".zip")!=-1 or link.find(".jpg")!=-1:
+                continue  
+            
             ## Format des Link prüfen, wenn ohne hostname-> diesen zufügen
             if link.startswith("/"):
 
@@ -219,6 +250,8 @@ def crawlLink(startLink,currentDepth):
              
 
 ### MAIN-Code
+
+print("Starting MV and JF's WebCrawler!")
 
 ## Init Stopwords
 ##Source and more Information: https://solariz.de/de/downloads/6/german-enhanced-stopwords.htm
