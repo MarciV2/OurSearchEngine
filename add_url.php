@@ -52,12 +52,12 @@
 				echo("Database error");
 			}            
 		}
-		$result->free();
-		$result2->free();
+		
 	}   
-		  
-	$mysqli->close(); 
+		
+	 
 	}
+	
 ?>
 
 <!DOCTYPE html>
@@ -77,7 +77,11 @@
 		<form action="index.php" method="post"> 
 			 <p><input type="submit" value="Zurück auf Hauptseite"</p>
         </form>
-
+	<?php
+	$result->free();
+	$result2->free();  
+	$mysqli->close();
+	?>
        
     </body>
 </html>

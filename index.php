@@ -81,7 +81,7 @@
                                     $item_count++;
 									
 									//Output of the Link and its id
-									echo "$item_count. Wordlink found, the id is: " . $link_var["id"] . " - <a href='" . $link_var["link"] . "'>" . $link_var["link"] . "</a>\n";								
+									echo "$item_count. Wordlink with the title: " . $link_var["title"] . " found, the id is: " . $link_var["id"] . " - <a href='" . $link_var["link"] . "'>" . $link_var["link"] . "</a>\n";								
                                     
 									
                                 }
