@@ -11,3 +11,11 @@ FROM wordlinks, word
 WHERE wordlinks.id_word=word.id 
 GROUP BY wordlinks.id_word 
 ORDER BY Anzahl DESC
+
+
+#### Sucht die längsten Worte in der DB zusammen mit der website, auf der es vorkommt
+SELECT LENGTH(word.word) AS Length, word.word ,links.link
+FROM word, wordlinks, links
+WHERE word.id=wordlinks.id_word AND
+	links.id=wordlinks.id_link
+ORDER BY Length DESC

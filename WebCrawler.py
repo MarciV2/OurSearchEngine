@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 from io import StringIO
 from html.parser import HTMLParser
 import re
+import validators
 
 ### DB-Parameter
 DBconfig = {
@@ -17,7 +18,6 @@ DBconfig = {
 
 maxDepth=2
 
-#url = 'https://www.google.de'
 # gibt html code der gewünschten url zurück
 def get_url_content(url):
     return requests.get(url).text
@@ -45,31 +45,44 @@ def getAllImages(soup):
 def getTitle(soup):    
     return soup.title.text
 
-## Alle Wörter der Seite zurückgeben
+## Alle Wörter der Seite zurückgeben, anhand von RegEx, wird jedoch nicht gefiltert!!!
 def getAllWords(soup):
     str=soup.text.replace("\n"," ").replace("\xa0"," ")
     words=re.findall("[a-zA-Z0-9äöüÄÖÜß][a-zA-Z0-9äöüÄÖÜß\-\_]*[a-zA-Z0-9äöüÄÖÜß]",str)
 
     return words
 
-
+## Alternative Methode um Wörter der Seite zu finden
 def getAllWords2(soup):
-    wordlist=[]
-    for each_text in soup.findAll("div"):
+    wordset={""}
+    for each_text in soup.findAll("p"):
         if each_text is not None: 
             words=[]
             content = each_text.text
             words = content.lower().split()
-            for each_word in words:
-                wordlist.append(each_word)
-    
-    
-    return clean_wordlist(wordlist)
 
+            for word in words:
+                if validators.url(word):
+                    words.remove(word)
+
+       
+            wordset.update(words)
+
+    #Stoppwörter löschen (mit Messung&Ausgabe der Anzahl)
+    len1=len(wordset)
+    wordset=wordset-set(stopwords)
+    len2=len1-len(wordset)
+    print("removed {} stopwords".format(len2))
+
+    return clean_wordlist(list(wordset))
+
+
+
+## Reinigt die Liste von Sonderzeichen
 def clean_wordlist(wordlist):
     clean_list = []
     for word in wordlist:
-        symbols = "!@#$%^&*()_-+={[}]|\;:\"<>?/., '"
+        symbols = "!@#$%^&*()_+={[}]|\;:\"<>?/., '\"©"
         for i in range(len(symbols)):
             word = word.replace(symbols[i], "")
         if len(word) > 0:
@@ -84,7 +97,7 @@ def getStartSite():
     mycursor.execute("""SELECT *
                 FROM links
                 WHERE timestamp_visited <= DATE_SUB(NOW(), INTERVAL 1 DAY)
-                ORDER BY timestamp_visited DESC
+                ORDER BY timestamp_visited ASC
                 LIMIT 1 """)
 
     myresult = mycursor.fetchone()
@@ -92,6 +105,8 @@ def getStartSite():
     cnx.close()
     return myresult
 
+
+## Schreibt den Link mit Titel und aktuellem Zeitpunkt auf die DB, gibt die ID zurück
 def writeLinkToDB(url, title):
     cnx = mysql.connector.connect(**DBconfig)
     mycursor=cnx.cursor()
@@ -116,7 +131,6 @@ def checkIfShouldCrawl(url):
     mycursor=cnx.cursor()
     query="""SELECT EXISTS(SELECT id FROM links 
         WHERE link="{}")""".format(url)
-    #print(query)
     mycursor.execute(query)
     myresult = mycursor.fetchone()[0]
 
@@ -124,6 +138,7 @@ def checkIfShouldCrawl(url):
     if myresult==0: return True
     else: return False
 
+## Schreibt alle Wörter in Liste in DB und stellt Wordlinks zu angegebener Link-ID her
 def writeAllWords(words,siteId):
     cnx = mysql.connector.connect(**DBconfig)
     mycursor=cnx.cursor(buffered=True)
@@ -152,14 +167,15 @@ def crawlLink(startLink,currentDepth):
     try:
         content = get_url_content(startLink)
     
-            # übergebe html an beautifulsoup parser
+        # übergebe html an beautifulsoup parser
         soup = BeautifulSoup(content, "html.parser")
 
         allLinks=getAllLinks(soup)
-        allImages=getAllImages(soup)
+        #allImages=getAllImages(soup)
         allWords=getAllWords2(soup)
         title=getTitle(soup)
     except:
+        # Fehler wie fehlender Titel,... werden abgefange
         print("An error occurred!")
         return False
 
@@ -178,6 +194,9 @@ def crawlLink(startLink,currentDepth):
 
         for link in allLinks:
 
+            if link.find(".css")!=-1 or link.find(".pdf")!=-1:
+                continue   
+
             ## Format des Link prüfen, wenn ohne hostname-> diesen zufügen
             if link.startswith("/"):
 
@@ -192,6 +211,7 @@ def crawlLink(startLink,currentDepth):
                 result = '{uri.scheme}://{uri.netloc}{uri.path}'.format(uri=parsed_uri)
                 link=result+link
             
+
             ## Link crawlen
             shouldCrawl=checkIfShouldCrawl(link)
             if shouldCrawl:
@@ -199,6 +219,14 @@ def crawlLink(startLink,currentDepth):
              
 
 ### MAIN-Code
+
+## Init Stopwords
+##Source and more Information: https://solariz.de/de/downloads/6/german-enhanced-stopwords.htm
+txt_file = open("stopwords.list", "r")
+file_content = txt_file.read()
+
+stopwords = file_content.split(",")
+txt_file.close()
 
     
 startSite=getStartSite()
