@@ -14,9 +14,9 @@
 	 
 		
 		 
-	if($url=="")
+	if($url=="" || !filter_var($url, FILTER_VALIDATE_URL))
 	{
-		echo("Url is empty");	
+		echo("Url is empty or is not recognized");	
 	}
 	else
 	{
@@ -40,7 +40,7 @@
 		else
 		{
 		// Insert new link
-		$sql = "INSERT INTO links (link, timestamp_visited) VALUES ('$url','0000-00-00 00:00:00');";
+		$sql = "INSERT INTO links (link, title, timestamp_visited) VALUES ('$url','','0000-00-00 00:00:00');";
 		echo $sql . "<br>";
 			if ($result2 = $mysqli->query($sql)) 
 			{
