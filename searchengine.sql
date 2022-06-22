@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.1.0
+-- version 5.2.0
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Erstellungszeit: 18. Jun 2022 um 15:33
--- Server-Version: 10.4.18-MariaDB
--- PHP-Version: 7.3.27
+-- Erstellungszeit: 22. Jun 2022 um 12:46
+-- Server-Version: 10.4.24-MariaDB
+-- PHP-Version: 8.1.6
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -34,26 +34,6 @@ CREATE TABLE `links` (
   `timestamp_visited` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
---
--- Daten für Tabelle `links`
---
-
-INSERT INTO `links` (`id`, `link`, `title`, `timestamp_visited`) VALUES
-(1, 'https://www.heidenheim.dhbw.de/startseite', 'Hochschule in Ostwürttemberg | DHBW Heidenheim', '2022-06-18 13:14:34'),
-(2, 'https://www.google.de', 'Google', '2022-06-18 12:51:29'),
-(3, 'https://www.amazon.de', 'Amazon.de: Günstige Preise für Elektronik & Foto, Filme, Musik, Bücher, Games, Spielzeug & mehr', '2022-06-18 12:52:31');
-
--- --------------------------------------------------------
-
---
--- Tabellenstruktur für Tabelle `word`
---
-
-CREATE TABLE `word` (
-  `id` int(11) NOT NULL,
-  `word` text NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 -- --------------------------------------------------------
 
 --
@@ -65,6 +45,17 @@ CREATE TABLE `wordlinks` (
   `id_word` int(11) NOT NULL,
   `id_link` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Tabellenstruktur für Tabelle `words`
+--
+
+CREATE TABLE `words` (
+  `id` int(11) NOT NULL,
+  `word` text NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Indizes der exportierten Tabellen
@@ -78,18 +69,18 @@ ALTER TABLE `links`
   ADD UNIQUE KEY `link` (`link`);
 
 --
--- Indizes für die Tabelle `word`
---
-ALTER TABLE `word`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `word` (`word`) USING HASH;
-
---
 -- Indizes für die Tabelle `wordlinks`
 --
 ALTER TABLE `wordlinks`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `wordlinks` (`id_word`,`id_link`);
+
+--
+-- Indizes für die Tabelle `words`
+--
+ALTER TABLE `words`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `word` (`word`) USING HASH;
 
 --
 -- AUTO_INCREMENT für exportierte Tabellen
@@ -99,19 +90,19 @@ ALTER TABLE `wordlinks`
 -- AUTO_INCREMENT für Tabelle `links`
 --
 ALTER TABLE `links`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2735;
-
---
--- AUTO_INCREMENT für Tabelle `word`
---
-ALTER TABLE `word`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9479;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2756;
 
 --
 -- AUTO_INCREMENT für Tabelle `wordlinks`
 --
 ALTER TABLE `wordlinks`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=94220;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=235171;
+
+--
+-- AUTO_INCREMENT für Tabelle `words`
+--
+ALTER TABLE `words`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13133;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
