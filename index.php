@@ -46,7 +46,7 @@
             if ($search != "") 
 			{
 				$mysqli = new mysqli("127.0.0.1", "root", "", 'searchengine');
-                $sql = "SELECT * FROM word WHERE word LIKE '%$search%' LIMIT 200;"; //Restrict ammount of results from the database
+                $sql = "SELECT * FROM words WHERE word LIKE '%$search%' LIMIT 200;"; //Restrict ammount of results from the database
                 if ($result = $mysqli->query($sql)) 
 				{
                     
