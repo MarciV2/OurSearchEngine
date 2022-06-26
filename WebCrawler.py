@@ -6,6 +6,7 @@ from io import StringIO
 from html.parser import HTMLParser
 import re
 import validators
+import time
 
 ### DB-Parameter
 DBconfig = {
@@ -17,6 +18,10 @@ DBconfig = {
 }
 
 maxDepth=2
+
+## Liste der zu entfernenden Sonderzeichen, kann bei bedarf ergänzt werden
+specialsymbols = "!@#$%^&*()_+={[}]|\;:\"<>?/., '\"©►“„…´​​​​​​"
+
 
 # gibt html code der gewünschten url zurück
 def get_url_content(url):
@@ -33,6 +38,7 @@ def getAllLinks(soup):
     return links
 
 ## Sucht alle Bilder auf der Seite und gibt die links als Liste zurück
+## wird derzeit nicht genutzt
 def getAllImages(soup):
     images=[]
     
@@ -43,10 +49,18 @@ def getAllImages(soup):
 
 ## Gibt den Titel der Website zurück
 def getTitle(soup):    
-    return soup.title.text
+    ## leerzeichen in titel erlaubt!
+    symbols = specialsymbols.replace(" ","")
+    title=soup.title.text
+    for i in range(len(symbols)):
+       title = title.replace(symbols[i], "")
+    return title
 
-regexTel= "[\+0][0-9 .()-]+"
 
+## RegEx für Telefonnummern
+regexTel= "[\+0\/][0-9 .()-]+"
+
+## RegEx für URLs, angepasst aus Internet, da keine perfekte Lösung gefunden wurde
 regexURL = re.compile(r"(\w+:\/\/)?(\w+\.)?(([a-zA-Z]+\w*)\.(\w+))(\.\w+)*([\w\-\._\~\/]*)*(?<!\.)[^.]")
 
 ## Wörter der Seite extrahieren, filtert auch Telefonnummern, E-Mails&URLs
@@ -57,16 +71,17 @@ def getAllWords(soup):
         if each_text is not None: 
             words=[]
 
-          
             content = each_text.text
 
-             ## Telefonnummern vorfiltern
+            ## Telefonnummern vorfiltern
+            ## Werden extra Liste angefügt, um Ersetzung von Sonderzeichen zu umgehen, am ende wieder an ausgabeliste angefügt
             numbers=re.findall(regexTel,content)
             if numbers: 
                for n in numbers: content=content.replace(n," ")
                n=n.replace(" ","")
                telNrs.add(n)
 
+            ## Aufteilung des Paragraphen in einzelne Wörter
             words = content.lower().split()
 
             for word in words:
@@ -76,7 +91,7 @@ def getAllWords(soup):
                 ## - am Ende des Wortes entfernen
                 if word.endswith("-"):
                     word=word[:-1]
-                ##  E-Mail-Adressen entfernen
+                ##  E-Mail-Adressen entfernen -> Erweiterungsmöglichkeit: Tabelle für Kontaktdaten..?
                 if(re.search(r"[\w\.\+\-]+\@[\w-]+(?:.[\w-])*\.[a-z]{2,3}", word)):
                         print("email found: {}".format(word))
                         words.remove(word)
@@ -86,18 +101,18 @@ def getAllWords(soup):
                     print("url erkannt: "+word)
                     while word in words: words.remove(word)
                     continue
-                
-                if word.find("www")!=-1 or word.find("49")!=-1:
-                    print("www!!")
-       
+            ## Wordset mit gefilterten Wörtern des Paragraphen updaten -> keine Duplikate, da Set    
             wordset.update(words)
 
+    ## Stoppwortbereinigung
     wordset=removeStopWords(wordset)
 
-    
-
+    ## Sonderzeichen aus Wortliste bereinigen
     cleanWordlist=clean_wordlist(list(wordset))
+
+    ## lleerer Datensatz aus TelNr-Liste löschen (notwendig, da sonst immer probleme...
     telNrs.remove("")
+    ## Listen zusammenfügen
     if len(telNrs)>=0: cleanWordlist.extend(list(telNrs))
     return cleanWordlist
 
@@ -113,15 +128,14 @@ def removeStopWords(wordset):
 def clean_wordlist(wordlist):
     clean_list = []
     for word in wordlist:
-        symbols = "!@#$%^&*()_+={[}]|\;:\"<>?/., '\"©►“„…´​​​​​​"
-        for i in range(len(symbols)):
-            word = word.replace(symbols[i], "")
+        for i in range(len(specialsymbols)):
+            word = word.replace(specialsymbols[i], "")
         if len(word) > 0:
             clean_list.append(word)
     return clean_list
 
 
-## Holt Seite von der DB, welche am längsten nicht gecrawled wurde
+## Holt Seite von der DB, welche am längsten nicht gecrawled wurde, jedoch in den letzten 24h noch nicht
 def getStartSite():
     cnx = mysql.connector.connect(**DBconfig)
     mycursor=cnx.cursor()
@@ -132,7 +146,6 @@ def getStartSite():
                 LIMIT 1 """)
 
     myresult = mycursor.fetchone()
-    
     cnx.close()
     return myresult
 
@@ -146,7 +159,6 @@ def writeLinkToDB(url, title):
                     ON DUPLICATE KEY
                     UPDATE title = "{}", timestamp_visited = NOW();""".format(url, title,title)
     queryGetId="""SELECT id FROM links WHERE link="{}" """.format(url)
-    #print(query)
     mycursor.execute(queryInsLink)
     mycursor.execute(queryGetId)
     linkId=mycursor.fetchone()[0]
@@ -156,7 +168,7 @@ def writeLinkToDB(url, title):
     cnx.close()
     return linkId
 
-    ### Prüft, ob URL in DB vorhanden ist, wenn ja, returned False
+    ### Prüft, ob URL in DB vorhanden ist, wenn ja, returned False, da diese später automatisch gecrawled wird
 def checkIfShouldCrawl(url):
     cnx = mysql.connector.connect(**DBconfig)
     mycursor=cnx.cursor()
@@ -220,13 +232,28 @@ def crawlLink(startLink,currentDepth):
     writeAllWords(allWords,linkId)
     
 
-
+    ## Tiefenbegrenzung: Damit Crawler nicht ewig auf einer Seite unterlinks crawled wird Begrenzung dann aktiv, tiefere Seiten werden nur langsam dem Crawler zugefügt
     if currentDepth<=maxDepth:
+        filetypes=[
+            ".css",
+            ".pdf",
+            ".zip",
+            ".jpg",
+            ".doc"
+            ]    
 
         for link in allLinks:
 
-            if link.find(".css")!=-1 or link.find(".pdf")!=-1 or link.find(".zip")!=-1 or link.find(".jpg")!=-1:
-                continue  
+            ## Dateien wie .css, .pdf, .zip, .jpg nicht crawlen!!
+            isbadlink=False
+            for ft in filetypes:
+                if(link.find(ft)!=-1):
+                    isbadlink=True  
+            if isbadlink: continue
+
+            ## Tel & Mail-Links überspringen
+            if link.startswith("tel:") or link.startswith("mailto"):
+                continue
             
             ## Format des Link prüfen, wenn ohne hostname-> diesen zufügen
             if link.startswith("/"):
@@ -255,25 +282,27 @@ print("Starting MV and JF's WebCrawler!")
 
 ## Init Stopwords
 ##Source and more Information: https://solariz.de/de/downloads/6/german-enhanced-stopwords.htm
-txt_file = open("stopwords.list", "r")
-file_content = txt_file.read()
+stopwords=[]
+try:
+    txt_file = open("stopwords.list", "r")
+    file_content = txt_file.read()
 
-stopwords = file_content.split(",")
-txt_file.close()
+    stopwords = file_content.split(",")
+    txt_file.close()
+except:
+    print("Stoppwortliste nicht gefunden! Es werden keine Stoppworte gefiltert!")
 
-    
-startSite=getStartSite()
-if(startSite!=None):
-    depth=0
-    startLink=startSite[1]
-    crawlLink(startLink,0)
 
-           
+while(1):   
+    startSite=getStartSite()
+    if(startSite!=None):
+        depth=0
+        startLink=startSite[1]
+        crawlLink(startLink,0)
 
-    
-    
-else:
-    print("Alle Datensätze aktuell, Web wird nicht gecrawled.")
+    else:
+        print("Alle Datensätze aktuell, Web wird nicht gecrawled.")
+        time.sleep(5)
 
 
 
