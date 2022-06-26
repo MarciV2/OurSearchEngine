@@ -7,7 +7,7 @@
         $search = $_GET['search'];
     } else {
         $search = "";
-        echo "Search phrase is missing";
+        
     }
 ?>
 
@@ -46,6 +46,46 @@
             if ($search != "") 
 			{
 				$mysqli = new mysqli("127.0.0.1", "root", "", 'searchengine');
+				//Count the total ammount of links safed
+				$sql = "SELECT COUNT(*) as total from links;";
+				if ($result = $mysqli->query($sql)) 
+				{
+					$count_links = $result->fetch_assoc();
+					
+					if($count_links['total']!=0)
+						echo"There are currently <b>" .$count_links['total']. " </b>links safed in total!";
+					else echo"There are currently no links safed";
+					echo"<br>";
+					
+					//Count the ammount of words safed in total
+					$sql = "SELECT COUNT(*) as total from words;";
+					if ($result = $mysqli->query($sql)) 
+					{
+						$count_words = $result->fetch_assoc();
+					
+						if($count_words['total']!=0)
+						{
+							echo"There are currently <b>" .$count_words['total']. "</b> words safed in total!";
+							echo"<br>";
+							
+							//Search for the word with the most uses
+							$sql = "SELECT COUNT(id_link)as total , id_word from wordlinks GROUP BY id_word ORDER BY total DESC;";
+							if ($result = $mysqli->query($sql)) 
+							{
+								$count_uses = $result->fetch_assoc();
+								$sql = "SELECT id, word from words WHERE id='" . $count_uses['id_word'] . "';";
+								if ($result = $mysqli->query($sql)) 
+								{
+									$most_used_word = $result->fetch_assoc();
+									echo"The most used word is <b>" . $most_used_word['word']."</b> with an id of <b>" . $most_used_word['id']. ",</b> it is  used a total of <b>".$count_uses['total']."</b> times!";
+						
+								}
+							}
+						}
+						else echo"There are currently no words safed";
+					}	
+				}
+				
                 $sql = "SELECT * FROM words WHERE word LIKE '%$search%' LIMIT 200;"; //Restrict ammount of results from the database
                 if ($result = $mysqli->query($sql)) 
 				{
@@ -56,7 +96,7 @@
                     while ($word_var = $result->fetch_assoc()) {
                        
 						//Found word with id within the loop 
-                        echo "<li> " . $word_var['word']."  has ID: ". $word_var['id'] . "\n";
+                        echo "<li> <b>" . $word_var['word']."</b>  has ID: <b>". $word_var['id'] . "</b>\n";
                         
                         //Wordlink for the given id
                         $sql="SELECT * FROM wordlinks WHERE id_word = '" . $word_var['id'] . "'  LIMIT 200;"; //Restrict ammount of results from the database
@@ -81,7 +121,7 @@
                                     $item_count++;
 									
 									//Output of the Link and its id
-									echo "$item_count. Wordlink with the title: " . $link_var["title"] . " found, the id is: " . $link_var["id"] . " - <a href='" . $link_var["link"] . "'>" . $link_var["link"] . "</a>\n";								
+									echo "<b>$item_count.</b> Wordlink with the title: <b>" . $link_var["title"] . "</b> found, the id is: <b>" . $link_var["id"] . "</b> - <a href='" . $link_var["link"] . "'>" . $link_var["link"] . "</a>\n";								
                                     
 									
                                 }
