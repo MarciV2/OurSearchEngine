@@ -1,3 +1,5 @@
+Web-Crawler von Johannes Fahr und Marcel Vidmar
+
 Link zu GitHub:
 https://github.com/MarciV2/OurSearchEngine
 
