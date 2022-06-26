@@ -6,7 +6,7 @@
         $url = $_GET['url'];
     } else {
         $url = "";
-        echo "'url' argument phrase missing";
+        
     }
 
 		
@@ -72,10 +72,10 @@
         
         <form action="add_url.php" method="get"> 
              <p>DHBW Add URL to Database: <input type="text" name="url" /></p>
-			 <p><input type="submit" value="Link hinzufügen"</p>
+			 <p><input type="submit" value="Add Link"</p>
         </form>
 		<form action="index.php" method="post"> 
-			 <p><input type="submit" value="Zurück auf Hauptseite"</p>
+			 <p><input type="submit" value="Back to the main site"</p>
         </form>
 	<?php
 	$result->free();

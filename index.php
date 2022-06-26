@@ -23,7 +23,7 @@
         
         <form action="add_url.php" method="get"> 
              <p>DHBW Add URL to Database: <input type="text" name="url" /></p>
-			 <p><input type="submit" value="Link hinzufügen"</p>
+			 <p><input type="submit" value="Add Link"</p>
         </form>
 
         <hr>
@@ -31,7 +31,7 @@
         <form action="index.php" method="get" style="text-align: center;"> 
             <p>DHBW Search</p>
             <p> <input type="text" name="search" /></p>
-            <p><input type="submit" name="search_db" value="Daten absenden"/></p>
+            <p><input type="submit" name="search_db" value="Search"/></p>
         </form>
         <hr>
         
@@ -85,19 +85,34 @@
 						else echo"There are currently no words safed";
 					}	
 				}
+				$sql = "SELECT word, count(*) AS total FROM words, wordlinks, links WHERE words.id=wordlinks.id_word AND	links.id=wordlinks.id_link    AND words.word LIKE '%$search%';";
+				if ($result = $mysqli->query($sql)) 
+				{
+					$total_found = $result->fetch_assoc();
+					echo"<br><br>The search phrase <b>$search</b> returned a total of <b>". $total_found['total'] . "</b> results!";
+				}
 				
                 $sql = "SELECT * FROM words WHERE word LIKE '%$search%' LIMIT 200;"; //Restrict ammount of results from the database
                 if ($result = $mysqli->query($sql)) 
 				{
                     
-					echo "<ul>\n";
+					echo "<ul>";
 					
                     $item_count = 0;
                     while ($word_var = $result->fetch_assoc()) {
                        
+						echo"<br>";
 						//Found word with id within the loop 
                         echo "<li> <b>" . $word_var['word']."</b>  has ID: <b>". $word_var['id'] . "</b>\n";
-                        
+						
+                        $sql="SELECT COUNT(*) AS total FROM wordlinks WHERE id_word= '" . $word_var['id'] . "';";
+						//Count times the word was found
+						if ($result_count = $mysqli->query($sql)) 
+						{
+							$count_word = $result_count->fetch_assoc();
+							echo " Word was found a total of <b>". $count_word['total'] . "</b> times\n";
+						}
+						
                         //Wordlink for the given id
                         $sql="SELECT * FROM wordlinks WHERE id_word = '" . $word_var['id'] . "'  LIMIT 200;"; //Restrict ammount of results from the database
 						
