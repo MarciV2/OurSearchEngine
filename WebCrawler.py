@@ -239,7 +239,8 @@ def crawlLink(startLink,currentDepth):
             ".pdf",
             ".zip",
             ".jpg",
-            ".doc"
+            ".doc",
+            "UnCryptMailto"
             ]    
 
         for link in allLinks:
