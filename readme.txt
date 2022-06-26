@@ -2,7 +2,7 @@ Link zu GitHub:
 https://github.com/MarciV2/OurSearchEngine
 
 Anleitung:
-1. searchengine.sql auf DB ausführen -> erstellt Tabellen und Einstiegs-Links
+1. searchengine.sql auf DB ausführen -> erstellt Tabellen und Einstiegs-Links (optional Datei mit Daten für bereits teilweise gefüllte DB)
 2. PHP-Dateien in htdocs von XAMPP kopieren
 3. evtl. eigene zu durchsuchende URLs eingeben
 4. notwendige Python-Libraries installieren
